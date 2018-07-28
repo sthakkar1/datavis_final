@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+  <style>
+  h1 {font-family: Verdana;
+    font-size: 42pt;
+    color: dimgray;}
+      a:link {text-decoration: none;}
+    h2 {font-family: Verdana;
+    color: dimgray;}
+    p {font-family: Verdana;
+      font-size: 14px;
+    color: dimgray}
+.button {
+    background-color: #92b4a7;
+    border: none;
+    color: white;
+    padding: 15px 25px;
+    text-align: center;
+    font-size: 16px;
+    transition: transform .2s; /* Animation */
+    cursor: pointer;
+    display: table-cell;
+    margin: auto;
+}
+/*var colors = ['#606c55', '#5a4855', '#b6cb9e', '#92b4a7', '#8c8a93', '#81667a'];*/
+.button:hover {
+    background-color: #2f712f;
+    transform: scale(1.02);
+}
+    #surround { padding: 0px 50px 50px 50px; margin-right: 100px;}
+    #head {padding-left: 50px;}
+    </style>
+  <div id="head"><h1><a class="button" href="index.html">The Visualization</a></h1>
+       <h1> <a class="button" href="about.html">About the Visualization</a></h1> </div>
+  <div id="surround">
+    
+    <h1 style = "color: #81667a">Crime in Chicago: 2017</h1>
+      <h2> The Visualization</h2>
+      <p>
+        In this interactive slideshow you’ll learn more information on how likely you are to experience certain types of crime in the city of Chicago as well as the general location in which you’re most likely to experience that form of crime. <br/><br/>
+Crime types are split into burglary, theft, assault, battery, narcotics, homicide, deceptive practice, sex-related crime, trespass, public peace violation, crime with at least one child involved, and weapons violation. These are available on the pie chart, which is on the top left of the visualization. The locations – displayed on the bar chart on the bottom right – are split into street (including sidewalks and alleys), residential, commercial, and public park/school grounds. You can also view historical data on the type of crime using the line chart on the bottom left. Annotations are in the form of a description on the top right corner of the visualization. The pie chart is the kickoff point for the visualization. Each portion of the pie chart is a trigger that updates changes on the bar chart, line chart, and annotation sections. <br/><br/>
+More specifically, when the user clicks on a portion of the pie chart, the line chart is updated with historical information on that type of crime going back to 2001 and the 2017 value of the total number of incidents of that crime is revealed. The purpose of the line chart is to see general trends on the crime rate for that specific type of crime. These values are plotted relative to other data points within the domain of that type of crime, so axes aren’t shown. For more information on the historical data associated with the selected type of crime, the user can hover over each data point and see the numerical value. 
+Similarly, the bar chart is redrawn on selection on the pie chart with bars plotted relative to the other values in the crime type domain. Because these values still exist on the 2017 time range (the year we are examining in the overall visualization), they are displayed clearly on each bar chart without input from user interaction. <br/><br/>
+A description and analysis of the data presented is also updated the same way. This section provides details on what the type of crime entails as well as possible reasons for trends on the line chart and bar chart.
+All the user interface events are communicated in general way to the user on the start page.
+Special thanks to those at bl.ocks.org for the helpful examples on d3!
+</p>
+    <h2>Design Methodology</h2>
+    <p>The overall visualization starts with the pie chart controller in the top left corner, since this is the component that users will see first. Below that is a line chart, which by its nature will not always have strictly horizontal lines. I chose to place this chart here for visual balance; the thin lines of the line chart pair with the pie chart much like the thinness of the text descriptions pair with the harsh boldness of the bar chart. This is also why the line chart and text descriptions are diagonal to each other. <br/><br/>
+    With consistency as my mantra, I used just one font family for the entire visualization, highlighting things in bold. I also used the same color palette throughout, associating the color of the pie chart to the colors of the bar chart and pie chart. Originally, I had planned to use the same color for the on-hover tooltips on the line chart, but quickly realized that that would interfere with the user's view of the line chart. <br/><br/>
+    In regard to the use of tooltips, I chose to have stylized tooltips for the line chart because that seemed necessary since the scale of the graph changes on update of the pie chart. I did not use stylized tooltips for the pie chart since I thought that would be far too distracting. Instead, on prolonged hover over a pie piece, the user sees the text value of the percentage of that crime type. 
+    </p>
+    <h2>The Dataset</h2>
+    <p>The data used in this visualization can be found on kaggle <a href="https://www.kaggle.com/chicago/chicago-crime" style="color: #b6cb9e">here.</a> The data was parsed through SQL queries. Some data entries in the set were either too specific to query or were simply labelled with "other". The location data in particular suffers from this problem. A more accurate visualization would include data on all these entries. However, in the spirit of keeping things simple and clean, I divided the locations into four distinct but general categories for a broader overview and discluded data labelled "other".</p>
+    </div>
+  
+</html>

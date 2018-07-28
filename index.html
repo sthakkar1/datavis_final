@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html>
+  <head>    
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <title>Chicago Crime Rate - 2017</title>
+    <script src="http://d3js.org/d3.v3.js"></script>
+    <style type="text/css">
+    
+
+#pieChart {    
+	position:absolute;
+	top:10px;
+	left:10px;
+	width:600px;
+	height: 600px; 
+}
+
+
+#lineChart {    
+	position:absolute;
+	top:650px;
+	left:15px;
+	height: 250px;
+}
+
+#barChart {
+	position:absolute;
+	top:600px;
+	left:650px;
+	height: 250px;
+}
+
+#annotations {
+	position:absolute;
+	top:250px;
+	left:680px;
+	height: 200px;
+    width: 500px;
+    text-align: left;
+}
+#ann {
+    font-family: verdana;
+    color: gray;
+}
+      
+div.tooltip {	
+    position: absolute;			
+    text-align: center;			
+    width: 60px;					
+    height: 28px;					
+    padding: 2px;				
+    font: 12px sans-serif;		
+    background: #92b4a7;	
+    border: 0px;		
+    border-radius: 8px;			
+    pointer-events: none;			
+}
+
+div.textbox {	
+    position: absolute;
+    top: 300px;
+    left: 650px;
+    text-align: left;			
+    width: 500px;					
+    height: 280px;					
+    padding: 2px;				
+    font-family: verdana;
+    font-size: 14pt;	
+    border: 0px;		
+    border-radius: 8px;			
+    pointer-events: none;			
+}
+
+.slice {
+   font-size: 12pt;
+   font-family: Verdana;
+   fill: white; //svg specific - instead of color
+   font-weight: bold;	
+  		} 
+
+/*for line chart*/
+.axis path, .axis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges; //The shape-rendering property is an SVG attribute, used here to make sure our axis and its tick mark lines are pixel-perfect. 
+}
+
+.line {
+  fill: none;
+  stroke-width: 3px;
+}
+
+.dot {
+  fill: white;
+  stroke-width: 1.5px;
+  }
+				
+
+.axis text {
+    font-family: Verdana;
+    font-size: 11px;
+}
+
+.title {
+    font-family: Verdana;
+    font-weight: bold;
+    font-size: 15px;	
+    fill: grey;
+}
+
+.xAxis {
+    font-family: verdana;
+    font-size: 11px;
+    fill: black;
+}  
+
+.yAxis {
+    font-family: verdana;
+    font-size: 11px;
+    fill: white;
+}
+
+  
+table {
+	border-collapse:collapse;
+	border: 0px;	
+	font-family: Verdana;	
+	color: #5C5558;
+	font-size: 12px;
+	text-align: right;			
+}
+
+td {
+	padding-left: 10px;		
+}
+
+#lineChartTitle1 {
+	font-family: Verdana;
+	fill       : grey;
+	font-weight: bold;
+	text-anchor: middle;
+}
+
+#lineChartTitle2 {
+	font-family: Verdana;
+	font-size  : 80px;
+	fill       : lightgrey;
+	text-anchor: middle;
+	font-weight: bold;
+	/*font-style: italic;*/
+}
+#title {
+    position:absolute;
+	top:10px;
+	left:680px;
+	height: 100px;
+    width: 500px;
+    
+}
+h1 { font-family: Verdana; color: grey}
+a:link {text-decoration: none}
+.button {
+    background-color: #92b4a7;
+    border: none;
+    color: white;
+    padding: 15px 25px;
+    text-align: center;
+    font-size: 16px;
+    transition: transform .2s; /* Animation */
+    cursor: pointer;
+    display: table-cell;
+    margin: auto;
+}
+
+.button:hover {
+    background-color: #2f712f;
+    transform: scale(1.02);
+}
+
+    </style>
+  <div id= "title">
+    <h1>Crime in Chicago: 2017</h1>
+      <h1 ><a class="button" href="index.html">The Visualization</a></h1>
+      <h1><a class="button" href="about.html">About the Visualization</a></h1>
+    </div>
+  </head>
+  <body>
+    <div id="pieChart"></div>
+    <div id="barChart"></div>  
+    <div id="lineChart"></div>
+    <div id="annotations">
+      <p id="ann">
+        <b>Components:</b> <br/>
+        <br/><b>Pie Chart – </b>Use this for navigating through the visualization. This allows you to choose the type of crime and will update the bar chart and line chart accordingly. Hover for information on the percent impact of each category.<br/>
+        <br/><b>Line Chart – </b>This shows the total number of incidents associated with the chosen type of crime for 2017. To view the number of incidents in previous years, hover over a data point.<br/>
+        <br/><b>Bar Chart – </b>This has a breakdown of location for the chosen type of crime. Number of incidents for each location in 2017 are indicated on each bar. 
+      </p>
+    </div>
+    
+    <script type="text/javascript">
+    
+/*
+################ FORMATS ##################
+-------------------------------------------
+*/
+
+
+var 	formatAsPercentage = d3.format("%"),
+		formatAsPercentage1Dec = d3.format(".1%"),
+		formatAsInteger = d3.format(","),
+		fsec = d3.time.format("%S s"),
+		fmin = d3.time.format("%M m"),
+		fhou = d3.time.format("%H h"),
+		fwee = d3.time.format("%a"),
+		fdat = d3.time.format("%d d"),
+		fmon = d3.time.format("%b")
+		;
+
+/*
+############# PIE CHART ###################
+-------------------------------------------
+*/
+
+
+
+function dsPieChart(){
+
+	var dataset = [
+		  {category: "Burglary", measure: 0.05},
+	      {category: "Theft", measure: 0.40},
+	      {category: "Assault", measure: 0.09},
+	      {category: "Battery", measure: 0.23},
+	      {category: "Narcotics", measure: 0.05},
+	      {category: "Homicide", measure:0.003},
+	      {category: "Deceptive Practice", measure: 0.09},
+          {category: "Sex Crime", measure: 0.01},
+          {category: "Trespass", measure: 0.03},
+          {category: "Public Peace Violation", measure: 0.007},
+          {category: "Child Involved", measure: 0.01},
+          {category: "Weapons Violation", measure: 0.02}
+	      ]
+	      ;
+    var colors = ['#606c55', '#5a4855', '#b6cb9e', '#92b4a7', '#8c8a93', '#81667a'];
+    // Do not include a domain
+    var palette = d3.scale.ordinal()
+      .range(colors);
+     
+	var    width = 600,
+		   height = 600,
+		   outerRadius = Math.min(width, height) / 2,
+		   innerRadius = outerRadius * .999,   
+		   // for animation
+		   innerRadiusFinal = outerRadius * .5,
+		   innerRadiusFinal3 = outerRadius* .45,
+		   color = palette    //builtin range of colors
+		   ;
+	    
+	var vis = d3.select("#pieChart")
+	     .append("svg:svg")              //create the SVG element inside the <body>
+	     .data([dataset])                   //associate our data with the document
+	         .attr("width", width)           //set the width and height of our visualization (these will be attributes of the <svg> tag
+	         .attr("height", height)
+	     		.append("svg:g")                //make a group to hold our pie chart
+	         .attr("transform", "translate(" + outerRadius + "," + outerRadius + ")")    //move the center of the pie chart from 0, 0 to radius, radius
+				;
+				
+   var arc = d3.svg.arc()              //this will create <path> elements for us using arc data
+        	.outerRadius(outerRadius).innerRadius(innerRadius);
+   
+   // for animation
+   var arcFinal = d3.svg.arc().innerRadius(innerRadiusFinal).outerRadius(outerRadius);
+	var arcFinal3 = d3.svg.arc().innerRadius(innerRadiusFinal3).outerRadius(outerRadius);
+
+   var pie = d3.layout.pie()           //this will create arc data for us given a list of values
+        .value(function(d) { return d.measure; });    //we must tell it out to access the value of each element in our data array
+
+   var arcs = vis.selectAll("g.slice")     //this selects all <g> elements with class slice (there aren't any yet)
+        .data(pie)                          //associate the generated pie data (an array of arcs, each having startAngle, endAngle and value properties) 
+        .enter()                            //this will create <g> elements for every "extra" data element that should be associated with a selection. The result is creating a <g> for every object in the data array
+            .append("svg:g")                //create a group to hold each slice (we will have a <path> and a <text> element associated with each slice)
+               .attr("class", "slice")    //allow us to style things in the slices (like text)
+               .on("mouseover", mouseover)
+    				.on("mouseout", mouseout)
+    				.on("click", up)				
+    				;
+    				
+        arcs.append("svg:path")
+               .attr("fill", function(d, i) { return color(i); } ) //set the color for each slice to be chosen from the color function defined above
+               .attr("d", arc)     //this creates the actual SVG path using the associated data (pie) with the arc drawing function
+					.append("svg:title") //mouseover title showing the figures
+				   .text(function(d) { return d.data.category + ": " + formatAsPercentage(d.data.measure); });			
+
+        d3.selectAll("g.slice").selectAll("path").transition()
+			    .duration(750)
+			    .delay(10)
+			    .attr("d", arcFinal )
+			    ;
+	
+	  // Add a label to the larger arcs, translated to the arc centroid and rotated.
+	  // source: http://bl.ocks.org/1305337#index.html
+	  arcs.filter(function(d) { return d.endAngle - d.startAngle > .2; })
+	  		.append("svg:text")
+	      .attr("dy", ".35em")
+	      .attr("text-anchor", "middle")
+	      .attr("transform", function(d) { return "translate(" + arcFinal.centroid(d) + ")rotate(" + angle(d) + ")"; })
+	      .text(function(d) { return formatAsPercentage(d.value); })
+	      .text(function(d) { return d.data.category; })
+	      ;
+	   
+	   // Computes the label angle of an arc, converting from radians to degrees.
+		function angle(d) {
+		    var a = (d.startAngle + d.endAngle) * 90 / Math.PI - 90;
+		    return a > 90 ? a - 180 : a;
+		}
+		    
+		
+		// Pie chart title			
+		vis.append("svg:text")
+	     	.attr("dy", ".35em")
+	      .attr("text-anchor", "middle")
+	      .text("Type of Crime")
+	      .attr("class","title")
+	      ;		    
+
+      vis.append("svg:text")
+	     	.attr("dy", "2em")
+	      .attr("text-anchor", "middle")
+	      .text("(Click a piece for more info)")
+	      .attr("class","xAxis")
+	      ;		    
+		
+	function mouseover() {
+	  d3.select(this).select("path").transition()
+	      .duration(750)
+	        		.attr("stroke","white")
+	        		.attr("stroke-width", 4)
+	        		.attr("d", arcFinal3)
+	        		;
+      
+	}
+	
+	function mouseout() {
+	  d3.select(this).select("path").transition()
+	      .duration(750)
+	        		.attr("stroke-width", 0)
+	        		.attr("d", arcFinal)
+	        		;
+	}
+	
+	function up(d, i) {
+				/* update bar chart and line chart when user selects piece of the pie chart */
+                updateText(d.data.category);
+				updateBarChart(d.data.category, color(i));
+				updateLineChart(d.data.category, color(i));
+			    
+	}
+}
+
+dsPieChart();
+
+/*
+############# BAR CHART ###################
+-------------------------------------------
+*/
+
+
+
+var datasetBarChart = [
+{ group: 'All', category: 'Street', measure: 68656}, 
+{ group: 'All', category: 'Public Park', measure: 14438}, 
+{ group: 'All', category: 'Residential', measure: 73041}, 
+{ group: 'All', category: 'Commercial', measure: 29152}, 
+{ group: 'Burglary', category: 'Street', measure: 72}, 
+{ group: 'Burglary', category: 'Public Park', measure: 128}, 
+{ group: 'Burglary', category: 'Residential', measure: 10496}, 
+{ group: 'Burglary', category: 'Commercial', measure: 837}, 
+{ group: 'Theft', category: 'Street', measure: 34056}, 
+{ group: 'Theft', category: 'Public Park', measure: 6093}, 
+{ group: 'Theft', category: 'Residential', measure: 14992}, 
+{ group: 'Theft', category: 'Commercial', measure: 17406}, 
+{ group: 'Assault', category: 'Street', measure: 6419}, 
+{ group: 'Assault', category: 'Public Park', measure: 1786}, 
+{ group: 'Assault', category: 'Residential', measure: 7234}, 
+{ group: 'Assault', category: 'Commercial', measure: 1961}, 
+{ group: 'Battery', category: 'Street', measure: 14590}, 
+{ group: 'Battery', category: 'Public Park', measure: 3490}, 
+{ group: 'Battery', category: 'Residential', measure: 24028}, 
+{ group: 'Battery', category: 'Commercial', measure: 2678}, 
+{ group: 'Narcotics', category: 'Street', measure: 6920}, 
+{ group: 'Narcotics', category: 'Public Park', measure: 1053}, 
+{ group: 'Narcotics', category: 'Residential', measure: 1779}, 
+{ group: 'Narcotics', category: 'Commercial', measure: 432}, 
+{ group: 'Homicide', category: 'Street', measure: 413}, 
+{ group: 'Homicide', category: 'Public Park', measure: 17}, 
+{ group: 'Homicide', category: 'Residential', measure: 45}, 
+{ group: 'Homicide', category: 'Commercial', measure: 15}, 
+{ group: 'Deceptive Practice', category: 'Street', measure: 1210}, 
+{ group: 'Deceptive Practice', category: 'Public Park', measure: 321}, 
+{ group: 'Deceptive Practice', category: 'Residential', measure: 7751}, 
+{ group: 'Deceptive Practice', category: 'Commercial', measure: 3673}, 
+{ group: 'Sex Crime', category: 'Street', measure: 366}, 
+{ group: 'Sex Crime', category: 'Public Park', measure: 185}, 
+{ group: 'Sex Crime', category: 'Residential', measure: 1345}, 
+{ group: 'Sex Crime', category: 'Commercial', measure: 168}, 
+{ group: 'Trespass', category: 'Street', measure: 841}, 
+{ group: 'Trespass', category: 'Public Park', measure: 703}, 
+{ group: 'Trespass', category: 'Residential', measure: 2359}, 
+{ group: 'Trespass', category: 'Commercial', measure: 1701}, 
+{ group: 'Public Peace Violation', category: 'Street', measure: 770}, 
+{ group: 'Public Peace Violation', category: 'Public Park', measure: 206}, 
+{ group: 'Public Peace Violation', category: 'Residential', measure: 242}, 
+{ group: 'Public Peace Violation', category: 'Commercial', measure: 113}, 
+{ group: 'Child Involved', category: 'Street', measure: 168}, 
+{ group: 'Child Involved', category: 'Public Park', measure: 172}, 
+{ group: 'Child Involved', category: 'Residential', measure: 1723}, 
+{ group: 'Child Involved', category: 'Commercial', measure: 22}, 
+{ group: 'Weapons Violation', category: 'Street', measure: 2831}, 
+{ group: 'Weapons Violation', category: 'Public Park', measure: 284}, 
+{ group: 'Weapons Violation', category: 'Residential', measure: 1047}, 
+{ group: 'Weapons Violation', category: 'Commercial', measure: 146}, 
+]
+;
+
+// set initial group value
+var group = "All";
+
+function datasetBarChosen(group) {
+	var ds = [];
+	for (x in datasetBarChart) {
+		 if(datasetBarChart[x].group==group){
+		 	ds.push(datasetBarChart[x]);
+		 } 
+		}
+	return ds;
+}
+
+
+function dsBarChartBasics() {
+
+		var margin = {top: 30, right: 5, bottom: 20, left: 50},
+		width = 500 - margin.left - margin.right,
+        height = 250 - margin.top - margin.bottom,
+		colorBar = d3.scale.category20(),
+		barPadding = 1
+		;
+		
+		return {
+			margin : margin, 
+			width : width, 
+			height : height, 
+			colorBar : colorBar, 
+			barPadding : barPadding
+		}			
+		;
+}
+
+function dsBarChart() {
+
+	var firstDatasetBarChart = datasetBarChosen(group);         	
+	
+	var basics = dsBarChartBasics();
+	
+	var margin = basics.margin,
+		width = basics.width,
+        height = basics.height,
+		colorBar = basics.colorBar,
+		barPadding = basics.barPadding
+		;
+					
+	var 	xScale = d3.scale.linear()
+						.domain([0, firstDatasetBarChart.length])
+						.range([0, width])
+						;
+						
+	// Create linear y scale 
+	// Purpose: No matter what the data is, the bar should fit into the svg area; bars should not
+	// get higher than the svg height. Hence incoming data needs to be scaled to fit into the svg area.  
+	var yScale = d3.scale.linear()
+			// use the max funtion to derive end point of the domain (max value of the dataset)
+			// do not use the min value of the dataset as min of the domain as otherwise you will not see the first bar
+		   .domain([0, d3.max(firstDatasetBarChart, function(d) { return d.measure; })])
+		   // As coordinates are always defined from the top left corner, the y position of the bar
+		   // is the svg height minus the data value. So you basically draw the bar starting from the top. 
+		   // To have the y position calculated by the range function
+		   .range([height, 0])
+		   ;
+	
+	//Create SVG element
+	
+	var svg = d3.select("#barChart")
+			.append("svg")
+		    .attr("width", width + margin.left + margin.right)
+		    .attr("height", height + margin.top + margin.bottom)
+		    .attr("id","barChartPlot")
+		    ;
+	
+	var plot = svg
+		    .append("g")
+		    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+		    ;
+    barColor = d3.rgb("#a7a5a5");
+  
+	plot.selectAll("rect")
+		   .data(firstDatasetBarChart)
+		   .enter()
+		   .append("rect")
+			.attr("x", function(d, i) {
+			    return xScale(i);
+			})
+		   .attr("width", width / firstDatasetBarChart.length - barPadding)   
+			.attr("y", 100)  
+            .attr("height", function(d) {
+			    return height-yScale(d.measure);
+			})
+            .attr("fill", barColor)
+            .attr("opacity", 0)
+            .transition()
+			    .duration(750)
+			    .delay(10)
+			    .attr("y", function(d) {
+			    return yScale(d.measure);
+                
+			}) 
+			.attr("opacity", 1)
+			
+			;
+	
+		
+	// Add y labels to plot	
+	
+	plot.selectAll("text")
+	.data(firstDatasetBarChart)
+	.enter()
+	.append("text")
+	.text(function(d) {
+			return formatAsInteger(d3.round(d.measure));
+	})
+	.attr("text-anchor", "middle")
+	// Set x position to the left edge of each bar plus half the bar width
+	.attr("x", function(d, i) {
+			return (i * (width / firstDatasetBarChart.length)) + ((width / firstDatasetBarChart.length - barPadding) / 2);
+	})
+	.attr("y", 114)
+    .transition()
+			    .duration(750)
+			    .delay(10)
+			    .attr("y", function(d) {
+			    return yScale(d.measure)+14;
+                
+			}) 
+	.attr("class", "yAxis")
+	;
+	
+	// Add x labels to chart	
+	
+	var xLabels = svg
+		    .append("g")
+		    .attr("transform", "translate(" + margin.left + "," + (margin.top + height)  + ")")
+		    ;
+	
+	xLabels.selectAll("text.xAxis")
+		  .data(firstDatasetBarChart)
+		  .enter()
+		  .append("text")
+		  .text(function(d) { return d.category;})
+		  .attr("text-anchor", "middle")
+			// Set x position to the left edge of each bar plus half the bar width
+						   .attr("x", function(d, i) {
+						   		return (i * (width / firstDatasetBarChart.length)) + ((width / firstDatasetBarChart.length - barPadding) / 2);
+						   })
+		  .attr("y", 15)
+		  .attr("class", "xAxis")
+		  ;			
+	 
+	// Title
+	
+	svg.append("text")
+		.attr("x", (width + margin.left + margin.right)/2)
+		.attr("y", 15)
+		.attr("class","title")				
+		.attr("text-anchor", "middle")
+		.text("Overall Crime by Location")
+		;
+}
+
+dsBarChart();
+
+ /* ** UPDATE CHART ** */
+ 
+/* updates bar chart on request */
+
+function updateBarChart(group, colorChosen) {
+	
+		var currentDatasetBarChart = datasetBarChosen(group);
+		
+		var basics = dsBarChartBasics();
+	
+		var margin = basics.margin,
+			width = basics.width,
+            height = basics.height,
+			colorBar = basics.colorBar,
+			barPadding = basics.barPadding
+			;
+		
+		var 	xScale = d3.scale.linear()
+			.domain([0, currentDatasetBarChart.length])
+			.range([0, width])
+			;
+		
+			
+		var yScale = d3.scale.linear()
+	      .domain([0, d3.max(currentDatasetBarChart, function(d) { return d.measure; })])
+	      .range([height,0])
+	      ;
+	      
+	   var svg = d3.select("#barChart svg");
+	      
+	   var plot = d3.select("#barChartPlot")
+	   	.datum(currentDatasetBarChart)
+		   ;
+	
+	  		/* Note that here we only have to select the elements - no more appending! */
+	  	plot.selectAll("rect")
+	      .data(currentDatasetBarChart)
+	      .transition()
+			.duration(750)
+			.attr("x", function(d, i) {
+			    return xScale(i);
+			})
+		   .attr("width", width / currentDatasetBarChart.length - barPadding)   
+			.attr("y", function(d) {
+			    return yScale(d.measure);
+			})  
+			.attr("height", function(d) {
+			    return height-yScale(d.measure);
+			})
+			.attr("fill", colorChosen)
+			;
+		
+		plot.selectAll("text.yAxis") // target the text element(s) which has a yAxis class defined
+			.data(currentDatasetBarChart)
+			.transition()
+			.duration(750)
+		   .attr("text-anchor", "middle")
+		   .attr("x", function(d, i) {
+		   		return (i * (width / currentDatasetBarChart.length)) + ((width / currentDatasetBarChart.length - barPadding) / 2);
+		   })
+		   .attr("y", function(d) {
+		   		return yScale(d.measure) + 14;
+		   })
+		   .text(function(d) {
+				return formatAsInteger(d3.round(d.measure));
+		   })
+		   .attr("class", "yAxis")					 
+		;
+		
+
+		svg.selectAll("text.title") // target the text element(s) which has a title class defined
+			.attr("x", (width + margin.left + margin.right)/2)
+			.attr("y", 15)
+			.attr("class","title")				
+			.attr("text-anchor", "middle")
+			.text(group + " Crime by Location")
+		;
+}
+
+
+/*
+############# LINE CHART ##################
+-------------------------------------------
+*/
+
+var datasetLineChart = [
+{ group: 'All', category: 2001, measure: 485744},
+{ group: 'All', category: 2002, measure: 486750},
+{ group: 'All', category: 2003, measure: 475932},
+{ group: 'All', category: 2004, measure: 469374},
+{ group: 'All', category: 2005, measure: 453698},
+{ group: 'All', category: 2006, measure: 448087},
+{ group: 'All', category: 2007, measure: 436986},
+{ group: 'All', category: 2008, measure: 427024},
+{ group: 'All', category: 2009, measure: 392646},
+{ group: 'All', category: 2010, measure: 370271},
+{ group: 'All', category: 2011, measure: 351722},
+{ group: 'All', category: 2012, measure: 335876},
+{ group: 'All', category: 2013, measure: 306967},
+{ group: 'All', category: 2014, measure: 275079},
+{ group: 'All', category: 2015, measure: 263798},
+{ group: 'All', category: 2016, measure: 268631},
+{ group: 'All', category: 2017, measure: 267440},
+{ group: 'Burglary', category: 2001, measure: 26011},
+{ group: 'Burglary', category: 2002, measure: 25623},
+{ group: 'Burglary', category: 2003, measure: 25156},
+{ group: 'Burglary', category: 2004, measure: 24564},
+{ group: 'Burglary', category: 2005, measure: 25504},
+{ group: 'Burglary', category: 2006, measure: 24324},
+{ group: 'Burglary', category: 2007, measure: 24858},
+{ group: 'Burglary', category: 2008, measure: 26218},
+{ group: 'Burglary', category: 2009, measure: 26766},
+{ group: 'Burglary', category: 2010, measure: 26422},
+{ group: 'Burglary', category: 2011, measure: 26619},
+{ group: 'Burglary', category: 2012, measure: 22843},
+{ group: 'Burglary', category: 2013, measure: 17894},
+{ group: 'Burglary', category: 2014, measure: 14570},
+{ group: 'Burglary', category: 2015, measure: 13183},
+{ group: 'Burglary', category: 2016, measure: 14287},
+{ group: 'Burglary', category: 2017, measure: 12992},
+{ group: 'Theft', category: 2001, measure: 145254},
+{ group: 'Theft', category: 2002, measure: 141970},
+{ group: 'Theft', category: 2003, measure: 138955},
+{ group: 'Theft', category: 2004, measure: 134246},
+{ group: 'Theft', category: 2005, measure: 124229},
+{ group: 'Theft', category: 2006, measure: 124026},
+{ group: 'Theft', category: 2007, measure: 119179},
+{ group: 'Theft', category: 2008, measure: 124016},
+{ group: 'Theft', category: 2009, measure: 112434},
+{ group: 'Theft', category: 2010, measure: 110057},
+{ group: 'Theft', category: 2011, measure: 108519},
+{ group: 'Theft', category: 2012, measure: 105436},
+{ group: 'Theft', category: 2013, measure: 95932},
+{ group: 'Theft', category: 2014, measure: 81268},
+{ group: 'Theft', category: 2015, measure: 77040},
+{ group: 'Theft', category: 2016, measure: 84843},
+{ group: 'Theft', category: 2017, measure: 87585},
+{ group: 'Assault', category: 2001, measure: 33180},
+{ group: 'Assault', category: 2002, measure: 33351},
+{ group: 'Assault', category: 2003, measure: 31072},
+{ group: 'Assault', category: 2004, measure: 30420},
+{ group: 'Assault', category: 2005, measure: 28612},
+{ group: 'Assault', category: 2006, measure: 27411},
+{ group: 'Assault', category: 2007, measure: 27852},
+{ group: 'Assault', category: 2008, measure: 26972},
+{ group: 'Assault', category: 2009, measure: 24275},
+{ group: 'Assault', category: 2010, measure: 22887},
+{ group: 'Assault', category: 2011, measure: 21888},
+{ group: 'Assault', category: 2012, measure: 21313},
+{ group: 'Assault', category: 2013, measure: 19262},
+{ group: 'Assault', category: 2014, measure: 18231},
+{ group: 'Assault', category: 2015, measure: 18426},
+{ group: 'Assault', category: 2016, measure: 20267},
+{ group: 'Assault', category: 2017, measure: 19298},
+{ group: 'Battery', category: 2001, measure: 93447},
+{ group: 'Battery', category: 2002, measure: 94152},
+{ group: 'Battery', category: 2003, measure: 88377},
+{ group: 'Battery', category: 2004, measure: 87135},
+{ group: 'Battery', category: 2005, measure: 83965},
+{ group: 'Battery', category: 2006, measure: 80666},
+{ group: 'Battery', category: 2007, measure: 79591},
+{ group: 'Battery', category: 2008, measure: 75922},
+{ group: 'Battery', category: 2009, measure: 68462},
+{ group: 'Battery', category: 2010, measure: 65404},
+{ group: 'Battery', category: 2011, measure: 60458},
+{ group: 'Battery', category: 2012, measure: 59135},
+{ group: 'Battery', category: 2013, measure: 54004},
+{ group: 'Battery', category: 2014, measure: 49447},
+{ group: 'Battery', category: 2015, measure: 48916},
+{ group: 'Battery', category: 2016, measure: 50288},
+{ group: 'Battery', category: 2017, measure: 49207},
+{ group: 'Narcotics', category: 2001, measure: 50567},
+{ group: 'Narcotics', category: 2002, measure: 51789},
+{ group: 'Narcotics', category: 2003, measure: 54288},
+{ group: 'Narcotics', category: 2004, measure: 57060},
+{ group: 'Narcotics', category: 2005, measure: 56234},
+{ group: 'Narcotics', category: 2006, measure: 55813},
+{ group: 'Narcotics', category: 2007, measure: 54454},
+{ group: 'Narcotics', category: 2008, measure: 46507},
+{ group: 'Narcotics', category: 2009, measure: 43543},
+{ group: 'Narcotics', category: 2010, measure: 43393},
+{ group: 'Narcotics', category: 2011, measure: 38605},
+{ group: 'Narcotics', category: 2012, measure: 35488},
+{ group: 'Narcotics', category: 2013, measure: 34127},
+{ group: 'Narcotics', category: 2014, measure: 29075},
+{ group: 'Narcotics', category: 2015, measure: 23877},
+{ group: 'Narcotics', category: 2016, measure: 13281},
+{ group: 'Narcotics', category: 2017, measure: 11621},
+{ group: 'Homicide', category: 2001, measure: 667},
+{ group: 'Homicide', category: 2002, measure: 657},
+{ group: 'Homicide', category: 2003, measure: 604},
+{ group: 'Homicide', category: 2004, measure: 454},
+{ group: 'Homicide', category: 2005, measure: 453},
+{ group: 'Homicide', category: 2006, measure: 476},
+{ group: 'Homicide', category: 2007, measure: 447},
+{ group: 'Homicide', category: 2008, measure: 513},
+{ group: 'Homicide', category: 2009, measure: 460},
+{ group: 'Homicide', category: 2010, measure: 438},
+{ group: 'Homicide', category: 2011, measure: 437},
+{ group: 'Homicide', category: 2012, measure: 505},
+{ group: 'Homicide', category: 2013, measure: 422},
+{ group: 'Homicide', category: 2014, measure: 426},
+{ group: 'Homicide', category: 2015, measure: 500},
+{ group: 'Homicide', category: 2016, measure: 783},
+{ group: 'Homicide', category: 2017, measure: 672},
+{ group: 'Deceptive Practice', category: 2001, measure: 14904},
+{ group: 'Deceptive Practice', category: 2002, measure: 13715},
+{ group: 'Deceptive Practice', category: 2003, measure: 13451},
+{ group: 'Deceptive Practice', category: 2004, measure: 13243},
+{ group: 'Deceptive Practice', category: 2005, measure: 13562},
+{ group: 'Deceptive Practice', category: 2006, measure: 13577},
+{ group: 'Deceptive Practice', category: 2007, measure: 14137},
+{ group: 'Deceptive Practice', category: 2008, measure: 14879},
+{ group: 'Deceptive Practice', category: 2009, measure: 13804},
+{ group: 'Deceptive Practice', category: 2010, measure: 12487},
+{ group: 'Deceptive Practice', category: 2011, measure: 12616},
+{ group: 'Deceptive Practice', category: 2012, measure: 13566},
+{ group: 'Deceptive Practice', category: 2013, measure: 13662},
+{ group: 'Deceptive Practice', category: 2014, measure: 15598},
+{ group: 'Deceptive Practice', category: 2015, measure: 15868},
+{ group: 'Deceptive Practice', category: 2016, measure: 18614},
+{ group: 'Deceptive Practice', category: 2017, measure: 18605},
+{ group: 'Sex Crime', category: 2001, measure: 4027},
+{ group: 'Sex Crime', category: 2002, measure: 3997},
+{ group: 'Sex Crime', category: 2003, measure: 3666},
+{ group: 'Sex Crime', category: 2004, measure: 3374},
+{ group: 'Sex Crime', category: 2005, measure: 3351},
+{ group: 'Sex Crime', category: 2006, measure: 3030},
+{ group: 'Sex Crime', category: 2007, measure: 3064},
+{ group: 'Sex Crime', category: 2008, measure: 3015},
+{ group: 'Sex Crime', category: 2009, measure: 2665},
+{ group: 'Sex Crime', category: 2010, measure: 2466},
+{ group: 'Sex Crime', category: 2011, measure: 2550},
+{ group: 'Sex Crime', category: 2012, measure: 2476},
+{ group: 'Sex Crime', category: 2013, measure: 2313},
+{ group: 'Sex Crime', category: 2014, measure: 2301},
+{ group: 'Sex Crime', category: 2015, measure: 2366},
+{ group: 'Sex Crime', category: 2016, measure: 2502},
+{ group: 'Sex Crime', category: 2017, measure: 2598},
+{ group: 'Trespass', category: 2001, measure: 13240},
+{ group: 'Trespass', category: 2002, measure: 13880},
+{ group: 'Trespass', category: 2003, measure: 14807},
+{ group: 'Trespass', category: 2004, measure: 15913},
+{ group: 'Trespass', category: 2005, measure: 16655},
+{ group: 'Trespass', category: 2006, measure: 14505},
+{ group: 'Trespass', category: 2007, measure: 13699},
+{ group: 'Trespass', category: 2008, measure: 12310},
+{ group: 'Trespass', category: 2009, measure: 10851},
+{ group: 'Trespass', category: 2010, measure: 9401},
+{ group: 'Trespass', category: 2011, measure: 8659},
+{ group: 'Trespass', category: 2012, measure: 8215},
+{ group: 'Trespass', category: 2013, measure: 8136},
+{ group: 'Trespass', category: 2014, measure: 7539},
+{ group: 'Trespass', category: 2015, measure: 6401},
+{ group: 'Trespass', category: 2016, measure: 6308},
+{ group: 'Trespass', category: 2017, measure: 6813},
+{ group: 'Public Peace Violation', category: 2001, measure: 2750},
+{ group: 'Public Peace Violation', category: 2002, measure: 2457},
+{ group: 'Public Peace Violation', category: 2003, measure: 2430},
+{ group: 'Public Peace Violation', category: 2004, measure: 2495},
+{ group: 'Public Peace Violation', category: 2005, measure: 2730},
+{ group: 'Public Peace Violation', category: 2006, measure: 3068},
+{ group: 'Public Peace Violation', category: 2007, measure: 3315},
+{ group: 'Public Peace Violation', category: 2008, measure: 3013},
+{ group: 'Public Peace Violation', category: 2009, measure: 3147},
+{ group: 'Public Peace Violation', category: 2010, measure: 3538},
+{ group: 'Public Peace Violation', category: 2011, measure: 3095},
+{ group: 'Public Peace Violation', category: 2012, measure: 3007},
+{ group: 'Public Peace Violation', category: 2013, measure: 3135},
+{ group: 'Public Peace Violation', category: 2014, measure: 2903},
+{ group: 'Public Peace Violation', category: 2015, measure: 2422},
+{ group: 'Public Peace Violation', category: 2016, measure: 1607},
+{ group: 'Public Peace Violation', category: 2017, measure: 1498},
+{ group: 'Child Involved', category: 2001, measure: 2240},
+{ group: 'Child Involved', category: 2002, measure: 2576},
+{ group: 'Child Involved', category: 2003, measure: 3033},
+{ group: 'Child Involved', category: 2004, measure: 3078},
+{ group: 'Child Involved', category: 2005, measure: 2881},
+{ group: 'Child Involved', category: 2006, measure: 2753},
+{ group: 'Child Involved', category: 2007, measure: 2880},
+{ group: 'Child Involved', category: 2008, measure: 2618},
+{ group: 'Child Involved', category: 2009, measure: 2574},
+{ group: 'Child Involved', category: 2010, measure: 2545},
+{ group: 'Child Involved', category: 2011, measure: 2343},
+{ group: 'Child Involved', category: 2012, measure: 2212},
+{ group: 'Child Involved', category: 2013, measure: 2344},
+{ group: 'Child Involved', category: 2014, measure: 2375},
+{ group: 'Child Involved', category: 2015, measure: 2297},
+{ group: 'Child Involved', category: 2016, measure: 2301},
+{ group: 'Child Involved', category: 2017, measure: 2243},
+{ group: 'Weapons Violation', category: 2001, measure: 4274},
+{ group: 'Weapons Violation', category: 2002, measure: 4281},
+{ group: 'Weapons Violation', category: 2003, measure: 4211},
+{ group: 'Weapons Violation', category: 2004, measure: 4297},
+{ group: 'Weapons Violation', category: 2005, measure: 4106},
+{ group: 'Weapons Violation', category: 2006, measure: 3821},
+{ group: 'Weapons Violation', category: 2007, measure: 3554},
+{ group: 'Weapons Violation', category: 2008, measure: 3877},
+{ group: 'Weapons Violation', category: 2009, measure: 4158},
+{ group: 'Weapons Violation', category: 2010, measure: 3704},
+{ group: 'Weapons Violation', category: 2011, measure: 3880},
+{ group: 'Weapons Violation', category: 2012, measure: 3907},
+{ group: 'Weapons Violation', category: 2013, measure: 3246},
+{ group: 'Weapons Violation', category: 2014, measure: 3114},
+{ group: 'Weapons Violation', category: 2015, measure: 3363},
+{ group: 'Weapons Violation', category: 2016, measure: 3449},
+{ group: 'Weapons Violation', category: 2017, measure: 4685}
+]
+;
+
+// set initial category value
+var group = "All";
+
+function datasetLineChartChosen(group) {
+	var ds = [];
+	for (x in datasetLineChart) {
+		 if(datasetLineChart[x].group==group){
+		 	ds.push(datasetLineChart[x]);
+		 } 
+		}
+	return ds;
+}
+
+function dsLineChartBasics() {
+
+	var margin = {top: 20, right: 10, bottom: 0, left: 50},
+	    width = 550 - margin.left - margin.right,
+	    height = 250 - margin.top - margin.bottom
+	    ;
+		
+		return {
+			margin : margin, 
+			width : width, 
+			height : height
+		}			
+		;
+  
+}
+
+
+function dsLineChart() {
+
+	var firstDatasetLineChart = datasetLineChartChosen(group);    
+	
+	var basics = dsLineChartBasics();
+	
+	var margin = basics.margin,
+		width = basics.width,
+	   height = basics.height
+		;
+  
+
+	var xScale = d3.scale.linear()
+	    .domain([0, firstDatasetLineChart.length-1])
+	    .range([0, width])
+	    ;
+
+	var yScale = d3.scale.linear()
+	    .domain([0, d3.max(firstDatasetLineChart, function(d) { return d.measure; })])
+	    .range([height, 0])
+	    ;
+	
+	var line = d3.svg.line()
+	    //.x(function(d) { return xScale(d.category); })
+	    .x(function(d, i) { return xScale(i); })
+	    .y(function(d) { return yScale(d.measure); })
+	    ;
+    var div = d3.select("#lineChart").append("div")	
+    .attr("class", "tooltip")				
+    .style("opacity", 0);
+	
+	var svg = d3.select("#lineChart").append("svg")
+	    .datum(firstDatasetLineChart)
+	    .attr("width", width + margin.left + margin.right)
+	    .attr("height", height + margin.top + margin.bottom)
+	    // create group and move it so that margins are respected (space for axis and title)
+	    
+	var plot = svg
+	    .append("g")
+	    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+	    .attr("id", "lineChartPlot")
+	    ;
+
+		/* descriptive titles as part of plot -- start */
+	var dsLength=firstDatasetLineChart.length;
+
+	plot.append("text")
+		.text(firstDatasetLineChart[dsLength-1].measure)
+		.attr("id","lineChartTitle2")
+		.attr("x",width/2)
+		.attr("y",height/2)	
+		;
+	/* descriptive titles -- end */
+	    
+	plot.append("path")
+	    .attr("class", "line")
+  // add color
+		.attr("stroke", "grey")
+	    .attr("d", line)
+        .attr("opacity", 0)
+        .transition()
+			    .duration(750)
+			    .delay(10)	
+	            .attr("opacity", 1)
+	    ;
+	  
+	plot.selectAll(".dot")
+	    .data(firstDatasetLineChart)
+	  	 .enter().append("circle")
+	    .attr("class", "dot")
+	    .attr("cx", line.x())
+	    .attr("cy", line.y())
+	    .attr("r", 3.5)
+	    .attr("stroke", "grey")
+	    .on("mouseover", function(d) {		
+            div.transition()		
+                .duration(200)
+                .style("opacity", .9);		
+            div	.html(d.category + ":<br/>"  + formatAsInteger(d.measure))	
+                .style("color", "white")
+                .style("font-family", "Verdana")
+                .style("left", (d3.event.pageX - 50) + "px")		
+                .style("top", (d3.event.pageY - 690) + "px");	
+            })					
+        .on("mouseout", function(d) {		
+            div.transition()		
+                .duration(500)		
+                .style("opacity", 0);	
+        })
+        //.append("title")
+	    //.text(function(d) { return d.category + ": " + formatAsInteger(d.measure); })
+	    ;
+
+	svg.append("text")
+		.text("Crime by History")
+		.attr("id","lineChartTitle1")
+        .attr("class", "title")
+		.attr("x",margin.left + ((width + margin.right)/2))
+		.attr("y", 15)
+		;
+
+}
+
+dsLineChart();
+
+
+ /* ** UPDATE LINE CHART ** */
+ 
+/* updates line chart on request */
+function updateLineChart(group, colorChosen) {
+
+	var currentDatasetLineChart = datasetLineChartChosen(group);   
+
+	var basics = dsLineChartBasics();
+	
+	var margin = basics.margin,
+		width = basics.width,
+	   height = basics.height
+		;
+
+	var xScale = d3.scale.linear()
+	    .domain([0, currentDatasetLineChart.length-1])
+	    .range([0, width])
+	    ;
+
+	var yScale = d3.scale.linear()
+	    .domain([0, d3.max(currentDatasetLineChart, function(d) { return d.measure; })])
+	    .range([height, 0])
+	    ;
+	
+	var line = d3.svg.line()
+    .x(function(d, i) { return xScale(i); })
+    .y(function(d) { return yScale(d.measure); })
+    ;
+
+   var plot = d3.select("#lineChartPlot")
+   	.datum(currentDatasetLineChart)
+	   ;
+	   
+	/* descriptive titles as part of plot -- start */
+	var dsLength=currentDatasetLineChart.length;
+	
+	plot.select("text")
+		.text(currentDatasetLineChart[dsLength-1].measure)
+		;
+	/* descriptive titles -- end */
+	   
+	plot
+	.select("path")
+		.transition()
+		.duration(750)			    
+	   .attr("class", "line")
+	   .attr("d", line)	
+	   // add color
+		.attr("stroke", colorChosen)
+	   ;
+	   
+	var path = plot
+		.selectAll(".dot")
+	   .data(currentDatasetLineChart)
+	   .transition()
+		.duration(750)
+	   .attr("class", "dot")
+	   .attr("cx", line.x())
+	   .attr("cy", line.y())
+	   .attr("r", 3.5)
+	   // add color
+       .attr("stroke", colorChosen)
+       .on("mouseover", function(d) {		
+            div.transition()		
+                .duration(200)	
+                .style("opacity", .9);		
+            div	.html(d.category + "<br/>"  +  formatAsInteger(d.measure))	
+                .style("left", (d3.event.pageX - 50) + "px")		
+                .style("top", (d3.event.pageY - 680) + "px");	
+            })					
+         .on("mouseout", function(d) {		
+            div.transition()		
+                .duration(500)		
+                .style("opacity", 0);	
+        })
+	   ;
+	   
+	   path
+	   .selectAll("title")
+	   .text(function(d) { return d.category + ": " + formatAsInteger(d.measure); })	 
+	   ;  
+  
+      svg.selectAll("text.title") // target the text element(s) which has a title class defined
+			.attr("x", (width + margin.left + margin.right)/2)
+			.attr("y", 15)
+			.attr("class","title")				
+			.attr("text-anchor", "middle")
+			.text(group + " Crime by History")
+		;
+
+}
+/*
+############# Annotations ##################
+-------------------------------------------
+*/
+
+var datasetAnnChart = [
+{ group: "Burglary", words: "<b>Burglary</b><br/><br/>Burglary, in contrast to theft, is the entering of a building or residence with the intention to commit a theft or any felonious crime. This definition implies that burglary would most likely happen in closed spaces, which we see on the bar chart. The threat of burglary has significantly decreased after 2011, possibly due to the increased use of security systems in homes. "},
+{ group: 'Theft', words: "<b>Theft</b><br/><br/>Though the number of thefts has almost halved since 2001, it still remains the largest threat comprising 40% of the pie.  While most thefts occur in public spaces, many occur in commercial and residential areas, most notably parking garages. "},
+{ group: 'Assault', words: "<b>Assault</b><br/><br/>Unlike battery, one can be charged with assault if the mere threat of harm is present. The gray area of this interpretation is probably why assault makes up a smaller portion of the pie. Nonetheless, the trends shown on both the bar graph and the line graph indicate similarities in assault and battery, implying the nature of the crime and the intentions of the perpetrators could be the same in both categories. "},
+{ group: 'Battery', words: "<b>Battery</b><br/><br/>A person may be charged with the crime of battery under Illinois law if he or she makes actual physical contact with another individual with the intent to injure, provoke, or insult that person. A simple battery charge may result in a fine of up to $2,500 and a jail sentence of up to a year. This type of crime occurs mostly on streets and residential areas. "},
+{ group: 'Narcotics', words: "<b>Narcotics</b><br/><br/>Narcotics crimes generally happen on streets, sidewalks, and alleys as these are usually the places where drug dealing occurs. Many of these cases dealt with the possession or sale of marijuana. Narcotics crime has seen a significant decline in the last decade, probably as a result of the more lax marijuana laws across the country. In 2012, amid a national discussion about reforming marijuana laws, the City Council gave officers the option of issuing tickets rather than booking pot possessors. Many cops stopped enforcing the pot laws altogether."},
+{ group: 'Homicide', words: "<b>Homicide</b><br/><br/>There has been a very clear spike in homicides in the past few years. With most of these incidents occurring in public spaces, it is commonly accepted as a result of gang violence. This might be due to Chicago’s comparatively light sentencing guidelines for illegal possession of guns. The reason for the spike, however, remains unknown. While Chicago might be known as America’s mass shooting capital, homicide still composes a very small fraction of the crime pie. "},
+{ group: 'Deceptive Practice', words: "<b>Deceptive Practice</b><br/><br/>Deceptive practice has seen a dramatic increase since 2001 with most cases occurring in residential places. The most prevalent form of this type of crime is financial identity theft. Thus, this increase makes sense with the onslaught of new forms of technology and the increased abstraction of the way we make purchases. "},
+{ group: 'Sex Crime', words: "<b>Sex-Related Crime</b><br/><br/>This category focuses on criminal sexual assault and excludes things like prostitution. Since 2001, reported cases of sexual assault have declined. Most of these incidences occur in residential places, which makes by the nature of the crime. Though this category makes up a small part of the pie, it is hard to determine the real extent of this category as it is the least likely to be reported. "},
+{ group: 'Trespass', words: "<b>Trespass</b><br/><br/>Trespassing is most common on residential and commercial properties as these are generally more restricted areas. This category of crime has seen a decline in the past decade, possibly due to the threat of greater security on properties with the wider use of home security technology. "},
+{ group: 'Public Peace Violation', words: "<b>Public Peace Violation</b><br/><br/>Public peace violation is defined as any behavior that tends to disturb the public peace or decorum, scandalize the community, or shock the public sense of morality. This is a broad topic that encompasses activities from false fire alarm to mob action. Public peace violations generally occur in public spaces. The total number of these cases is relatively low year after year. "},
+{ group: 'Child Involved', words: "<b>Child-Involved Crime</b><br/><br/>The number of crimes involving children has remained more or less consistent since 2001. Much like the sex-related crime category, many of these cases go unreported as the victims of these crimes are relatively unlikely to report the case. So while the pie is minimally populated with crimes that have children involved, it is difficult to know how the true number of occurrences. "},
+{ group: 'Weapons Violation', words: "<b>Weapons Violation</b><br/><br/>This category goes hand-in-hand with the homicide category, where Chicago’s relatively light sentencing guidelines for illegal possession of guns may be to blame. The spike in cases over the 2017 year might be as a response to the spike in homicides of the previous year. The trends in where these cases occur follows the homicide plot, which indicates that these types of crimes may stem from similar intentions. "},
+]
+;
+
+function getText(group) {
+  var ds = "text";
+	for (x in datasetAnnChart) {
+		 if(datasetAnnChart[x].group==group){
+		 	ds = datasetAnnChart[x].words;
+		 } 
+		}
+	return ds;
+}
+    
+function updateText(group) {
+  var text = getText(group);
+  document.getElementById("ann").innerHTML = text;
+  
+}
+
+    </script>
+  </body>
+</html>
